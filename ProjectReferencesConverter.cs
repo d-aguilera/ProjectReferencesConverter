@@ -13,6 +13,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -332,7 +333,12 @@ namespace ProjectReferencesConverter
                     UpdateProgress(dte, BuildProgressLabel(null, amountCompleted, total), amountCompleted, total);
                 }
 
-                MessageBox.Show(BuildSummaryText(added, converted, remapped, warnings), "Convert All References to Project References", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    BuildSummaryText(added, converted, remapped, warnings),
+                    "Convert All References to Project References",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                    );
             }
             finally
             {
@@ -446,13 +452,20 @@ namespace ProjectReferencesConverter
 
         static string BuildProgressLabel(string projectName, int amountCompleted, int total)
         {
-            return string.Format(
-                "{0}: adding required projects and updating references... ({1}/{2})",
-                string.IsNullOrEmpty(projectName) ? "Finished" : ("Project " + projectName),
-                projectName,
-                amountCompleted,
-                total
-                );
+            return string.IsNullOrEmpty(projectName)
+                ? string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Finished adding required projects and updating references ({0}).",
+                    total
+                    )
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Project {0}: adding required projects and updating references... ({1}/{2})",
+                    projectName,
+                    amountCompleted,
+                    total
+                    )
+                ;
         }
 
         static void UpdateProgress(_DTE dte, string label, int amountCompleted, int total)
