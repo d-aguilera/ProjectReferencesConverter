@@ -107,7 +107,9 @@ namespace ProjectReferencesConverter
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            var projectsRootPath = GetProjectsRootPath();
+            var dte = (_DTE)ServiceProvider.GetService(typeof(DTE));
+
+            var projectsRootPath = GetProjectsRootPath(Path.GetDirectoryName(dte.Solution.FullName));
             if (string.IsNullOrEmpty(projectsRootPath))
                 return;
 
@@ -120,12 +122,6 @@ namespace ProjectReferencesConverter
                 .Select(pattern => Regex.Replace(pattern, @"\.", m => @"\" + m.Value))
                 .Select(pattern => Regex.Replace(pattern, @"\*|\?", m => "." + m.Value))
                 ;
-
-            //var assembliesRootPath = GetAssembliesRootPath();
-            //if (string.IsNullOrEmpty(projectsRootPath))
-            //    return;
-
-            var dte = (_DTE)ServiceProvider.GetService(typeof(DTE));
 
             var added = 0;
             var converted = 0;
@@ -484,10 +480,12 @@ namespace ProjectReferencesConverter
             Application.DoEvents();
         }
 
-        static string GetProjectsRootPath()
+        static string GetProjectsRootPath(string defaultFolder = null)
         {
-            using (var dialog = new FolderBrowserDialog { Description = "Enter root folder to search for Projects" })
+            using (var dialog = new FolderBrowserDialog())
             {
+                dialog.Description = "Enter root folder to search for Projects";
+                dialog.SelectedPath = defaultFolder;
                 return dialog.ShowDialog() == DialogResult.OK ? dialog.SelectedPath : null;
             }
         }
