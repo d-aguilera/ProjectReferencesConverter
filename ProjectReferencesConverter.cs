@@ -370,7 +370,10 @@ namespace ProjectReferencesConverter
                     amountCompleted++;
                 }
 
-                UpdateProgress(dte, BuildProgressLabel(null, amountCompleted, total), amountCompleted, total);
+                if (total > 0)
+                {
+                    UpdateProgress(dte, BuildProgressLabel(null, amountCompleted, total), amountCompleted, total);
+                }
 
                 MessageBox.Show(BuildSummaryText(added, converted, remapped, warnings), "Convert All References to Project References", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
