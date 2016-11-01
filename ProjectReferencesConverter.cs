@@ -151,6 +151,18 @@ namespace ProjectReferencesConverter
                     AddProject(project, projectsInSolution, projectsToAnalyze, warnings);
                 }
 
+                if (projectsInSolution.Count == 0)
+                {
+                    MessageBox.Show(
+                        "Current solution contains no projects.",
+                        "Convert All References to Project References",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                        );
+
+                    return;
+                }
+
                 var amountCompleted = 0;
                 var total = projectsToAnalyze.Count;
 
