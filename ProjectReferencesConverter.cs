@@ -141,14 +141,9 @@ namespace ProjectReferencesConverter
                     FindProjectFiles(projectsRootPath, projFilters)
                 );
 
-                //var task2 = System.Threading.Tasks.Task.Run(() =>
-                //    FindThirdPartyFiles(assembliesRootPath)
-                //);
-
-                System.Threading.Tasks.Task.WaitAll(task1); //, task2);
+                System.Threading.Tasks.Task.WaitAll(task1);
 
                 var projectFilesFound = task1.Result;
-                //var thirdPartyFilesFound = task2.Result;
 
                 UpdateStatus(dte, $"Found {projectFilesFound.Count} projects. Analyzing solution...");
 
@@ -269,40 +264,6 @@ namespace ProjectReferencesConverter
 
                             solutionReferencesToConvert.Add(identity, sourceProject);
                         }
-                        //else
-                        //{
-                        //    // look for reference in third-party assemblies
-                        //    if (thirdPartyFilesFound.ContainsKey(identity))
-                        //    {
-                        //        string hintPath;
-
-                        //        // multiple duplicate assemblies might match reference name
-
-                        //        var candidateAssemblyFiles = thirdPartyFilesFound[identity];
-                        //        if (candidateAssemblyFiles.Count() > 1)
-                        //        {
-                        //            // duplicate project files exist for this reference, ask user to pick one
-                        //            switch (DupesDialog.Prompt(candidateAssemblyFiles, projectName, out hintPath))
-                        //            {
-                        //                case DialogResult.Abort: return;
-                        //                case DialogResult.Ignore: continue;
-                        //            }
-
-                        //            // remember user selection by removing non-selected items
-                        //            thirdPartyFilesFound[identity] = candidateAssemblyFiles
-                        //                .Where(file => file == hintPath)
-                        //                ;
-                        //        }
-                        //        else
-                        //        {
-                        //            // only one project file found for this reference
-                        //            hintPath = candidateAssemblyFiles.Single();
-                        //        }
-
-                        //        if (!hintPath.Equals(reference.Path, StringComparison.OrdinalIgnoreCase))
-                        //            thirdPartyReferencesToConvert.Add(identity, hintPath);
-                        //    }
-                        //}
                     }
 
                     int i;
@@ -533,8 +494,9 @@ namespace ProjectReferencesConverter
 
         static string GetAssembliesRootPath()
         {
-            using (var dialog = new FolderBrowserDialog { Description = "Enter root folder to search for 3rd-party Assemblies" })
+            using (var dialog = new FolderBrowserDialog())
             {
+                dialog.Description = "Enter root folder to search for 3rd-party Assemblies";
                 return dialog.ShowDialog() == DialogResult.OK ? dialog.SelectedPath : null;
             }
         }
@@ -578,25 +540,6 @@ namespace ProjectReferencesConverter
 
             return dic;
         }
-
-        //static IDictionary<string, IEnumerable<string>> FindThirdPartyFiles(string rootFolder)
-        //{
-        //    #region Argument validation
-
-        //    if (string.IsNullOrEmpty(rootFolder))
-        //        throw new ArgumentNullException("rootFolder");
-
-        //    if (!Directory.Exists(rootFolder))
-        //        throw new ArgumentException("Specified root folder '" + rootFolder + "' does not exist.");
-
-        //    #endregion
-
-        //    var dic = new ConcurrentDictionary<string, IEnumerable<string>>();
-
-        //    AddFiles(rootFolder, "*.dll", dic);
-
-        //    return dic;
-        //}
 
         static void AddFiles(string rootFolder, string pattern, ConcurrentDictionary<string, IEnumerable<string>> dic)
         {
