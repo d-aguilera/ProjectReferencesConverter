@@ -21,6 +21,8 @@ using System.Windows.Forms;
 
 using VSLangProj;
 
+using ThreadingTask = System.Threading.Tasks.Task;
+
 namespace ProjectReferencesConverter
 {
     /// <summary>
@@ -110,39 +112,13 @@ namespace ProjectReferencesConverter
         {
             var dte = (_DTE)ServiceProvider.GetService(typeof(DTE));
 
-            var projectsRootPath = GetProjectsRootPath(Path.GetDirectoryName(dte.Solution.FullName));
-            if (string.IsNullOrEmpty(projectsRootPath))
-                return;
-
-            var projFilters = GetProjectFilters();
-            if (null == projFilters)
-                return;
-
-            // convert filters (wildcards) into regex patterns
-            var regexFilters = projFilters
-                .Select(pattern => Regex.Replace(pattern, @"\.", m => @"\" + m.Value))
-                .Select(pattern => Regex.Replace(pattern, @"\*|\?", m => "." + m.Value))
-                ;
-
             var added = 0;
             var converted = 0;
             var remapped = 0;
-            var warnings = new List<string>();
 
             try
             {
-                dte.StatusBar.Animate(true, vsStatusAnimation.vsStatusAnimationFind);
-                UpdateStatus(dte, "Searching for project files...");
-
-                var task1 = System.Threading.Tasks.Task.Run(() =>
-                    FindProjectFiles(projectsRootPath, projFilters)
-                );
-
-                System.Threading.Tasks.Task.WaitAll(task1);
-
-                var projectFilesFound = task1.Result;
-
-                UpdateStatus(dte, $"Found {projectFilesFound.Count} projects. Analyzing solution...");
+                var warnings = new List<string>();
 
                 var projectsInSolution = new Dictionary<string, VSProject>();
                 var projectsToAnalyze = new Stack<string>();
@@ -161,6 +137,51 @@ namespace ProjectReferencesConverter
                         );
 
                     return;
+                }
+
+                IDictionary<string, IEnumerable<string>> projectFilesFound;
+                string projectsRootPath;
+
+                if (projectsToAnalyze.Count > 0)
+                {
+                    projectsRootPath = GetProjectsRootPath(Path.GetDirectoryName(dte.Solution.FullName));
+                    if (string.IsNullOrEmpty(projectsRootPath))
+                        return;
+
+                    var projFilters = GetProjectFilters();
+                    if (null == projFilters)
+                        return;
+
+                    // convert filters (wildcards) into regex patterns
+                    var regexFilters = projFilters
+                        .Select(pattern => Regex.Replace(pattern, @"\.", m => @"\" + m.Value))
+                        .Select(pattern => Regex.Replace(pattern, @"\*|\?", m => "." + m.Value))
+                        ;
+
+                    dte.StatusBar.Animate(true, vsStatusAnimation.vsStatusAnimationFind);
+                    try
+                    {
+                        UpdateStatus(dte, "Searching for project files...");
+                        
+                        var task1 = ThreadingTask.Run(() =>
+                            FindProjectFiles(projectsRootPath, projFilters)
+                        );
+
+                        ThreadingTask.WaitAll(task1);
+
+                        projectFilesFound = task1.Result;
+
+                        UpdateStatus(dte, $"Found {projectFilesFound.Count} projects. Analyzing solution...");
+                    }
+                    finally
+                    {
+                        dte.StatusBar.Animate(false, vsStatusAnimation.vsStatusAnimationFind);
+                    }
+                }
+                else
+                {
+                    projectFilesFound = new Dictionary<string, IEnumerable<string>>();
+                    projectsRootPath = null;
                 }
 
                 var amountCompleted = 0;
@@ -355,7 +376,6 @@ namespace ProjectReferencesConverter
             finally
             {
                 dte.StatusBar.Progress(false);
-                dte.StatusBar.Animate(false, vsStatusAnimation.vsStatusAnimationFind);
                 dte.StatusBar.Clear();
                 dte.StatusBar.Text = BuildSummaryText(added, converted, remapped, null);
             }
