@@ -503,14 +503,23 @@ namespace ProjectReferencesConverter
 
         static IEnumerable<string> GetProjectFilters()
         {
-            var filters = "CIS.*|Viterra.*";
+            var iniFile = new IniFile();
+            var filters = iniFile.Read("ProjectNameFilters"); // "CIS.*|Viterra.*|ViterraWebControls.*";
             var text = "Please specify reference names to search for.\n\nValid wildcards characters: * ?\nPattern separator: |\n";
             var caption = "Project Name Filters";
 
-            return PromptDialog.Prompt(text, caption, filters, out filters) == DialogResult.OK
-                ? filters.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+            var newFilters = filters;
+            var result = PromptDialog.Prompt(text, caption, filters, out newFilters) == DialogResult.OK
+                ? newFilters.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
                 : null
                 ;
+
+            if (newFilters != filters)
+            {
+                iniFile.Write("ProjectNameFilters", newFilters);
+            }
+
+            return result;
         }
 
         static IDictionary<string, IEnumerable<string>> FindProjectFiles(string rootFolder, IEnumerable<string> patterns)
