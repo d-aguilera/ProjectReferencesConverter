@@ -51,6 +51,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="IniFile.cs" />
     <Compile Include="ProjectReferencesConverter.cs" />
     <Compile Include="ProjectReferencesConverterPackage.cs" />
     <Compile Include="DupesDialog.cs">
